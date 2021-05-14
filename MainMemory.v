@@ -49,11 +49,24 @@ module MainMemory
   end
 
   always @(posedge CLOCK) begin : DATA_blockRam
-    if (c$app_arg & ENABLE) begin
+    //$display("write%b,reade%b",c$app_arg,ENABLE);
+    //$display(ds[31:0]);
+    if (c$app_arg) begin
+        //$display("h1r1");
+        //$display("data to write%b",ds[31:0]);
+      //write
+      //$display("target %d, data to write %b",wild_0,ds);
       DATA_RAM[(wild_0)] <= ds[31:0];
     end
+      //read
     if (ENABLE) begin
+       //$display("jooder");
       DATA <= DATA_RAM[(wild)];
+    end
+    if (RESET) begin
+//         for (i=0; i < 512; i = i + 1) begin
+//            $display("%b",DATA_RAM[i]);
+//         end
     end
   end
   // blockRam end

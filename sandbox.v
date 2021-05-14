@@ -1,22 +1,36 @@
 module sdbx;
-reg[5:0] op=6'b000000;
+reg[5:0] op=6'b000001;
 reg[8:0] ctr;
-integer i;
+reg clk;
+integer k;
 reg [4:0] sig;
+reg [10:0] i,q;
+integer start;
+integer fin;
 
     initial begin
-        sig[4]=(~op[5]&(~op[4])&(~op[3])&(~op[2])&(~op[1])&(~op[0]));
-        sig[3]=(op[5]&(~op[4])&(~op[3])&(~op[2])&(op[1])&(op[0]));
-        sig[2]=(op[5]&(~op[4])&(op[3])&(~op[2])&(op[1])&(op[0]));
-        sig[1]=(~op[5]&(~op[4])&(~op[3])&(op[2])&(~op[1])&(~op[0]));
-        sig[0]=(~op[5]&(~op[4])&(~op[3])&(~op[2])&(op[1])&(~op[0]));
-        $display("%b",sig);
-        ctr[8]=sig[4]|sig[3];
-        ctr[7]=sig[3]|sig[2];
-        ctr[6:2]=sig[4:0];
-        ctr[1]=sig[4];
-        ctr[0]=sig[1];
-        $display("%b",ctr);
-
+        i=11'b0;
+        k=op;
+        clk=0;
+        #10 clk=~clk;
+        #10 clk=~clk;
+        #10 clk=~clk;
     end
+
+    task modify(input integer start,fin,output reg[10:0] q);
+
+        begin
+        q=i;
+        end
+    endtask
+
+    always@(clk) begin
+
+        $display("%b",4'b1100&4'b1010);
+        $display("%b",{10*op[0],10*op[1]});
+    end
+
+
+
+
 endmodule

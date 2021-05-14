@@ -8,7 +8,6 @@ module InstructionRAM
     , input  RESET // reset
     , input  ENABLE
     , input [31:0] FETCH_ADDRESS
-
       // Outputs
     , output reg [31:0] DATA
     );
@@ -35,10 +34,12 @@ module InstructionRAM
   reg [31:0] RAM [0:512-1];
 
   initial begin
-    $readmemb("instructions.bin",RAM);
+    $readmemb("test.txt",RAM);
   end
 
   always @(posedge CLOCK) begin : InstructionRAM_blockRamFile
+
+    //$display("INSTFETCHADDR %d, RST %b",wild,DATA);
     if (1'b0 & ENABLE) begin
       RAM[(wild_0)] <= DATA_0[31:0];
     end

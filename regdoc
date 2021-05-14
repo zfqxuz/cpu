@@ -1,0 +1,33 @@
+IF/ID:
+[31:0]:instruction;
+[63:32]:pc+4.
+ID/EX:
+[31:0]: pc+4
+[63:32]:sign_extend inst[15:0]
+[68:64]:inst[15:11]
+[73:69]:inst[20:16]
+[105:74]:regB data(regA_and_regB[31:0])
+[137:106]:regA data(regA_and_regB[63:32])
+[147:138]:10bit control signal
+[148] FINISH
+[180:149]:inst
+///used in wb:ctr[4](jump),ctr[1](regwrite)and ctr[0](memtoeg)
+///used in ex:ctr[9](regdst),ctr[8](alusrc),ctr[7:6](aluop)
+///used in mem:ctr[5](branch),ctr[3](memread),ctr[2](memwrite)
+EX/MEM:
+[31:0]:pc+4+imm<<2(IDEX[31:0])
+[36:32]:MUX(IDEX[4:0],IDEX[9:5]) write reg
+[68:37]:IDEX[105:74](REGB DATA) write data
+[100:69]:ALU result
+[101]:zerobit
+[107:102]:IDEX[143:138](CTR[5:0])
+[108] finished
+[140:109]:INST
+
+MEM/WB:
+[4:0]:EX/MEM[36:32]
+[36:5]:READ DATA
+[68:37]:ALU RST
+[71:69]ctr[4,1,0]
+[72] finish
+[104:73] INST
