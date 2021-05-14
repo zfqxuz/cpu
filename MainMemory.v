@@ -56,7 +56,8 @@ module MainMemory
         //$display("data to write%b",ds[31:0]);
       //write
       //$display("target %d, data to write %b",wild_0,ds);
-      DATA_RAM[(wild_0)] <= ds[31:0];
+      DATA_RAM[(wild_0>>4)] = ds[31:0];
+
     end
       //read
     if (ENABLE) begin
@@ -64,9 +65,9 @@ module MainMemory
       DATA <= DATA_RAM[(wild)];
     end
     if (RESET) begin
-//         for (i=0; i < 512; i = i + 1) begin
-//            $display("%b",DATA_RAM[i]);
-//         end
+         for (i=0; i < 25; i = i + 1) begin
+            $display("%b",DATA_RAM[i]);
+         end
     end
   end
   // blockRam end

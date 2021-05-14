@@ -11,7 +11,7 @@ reg [2:0] flags;
 integer count=0;
 assign FLAGS=flags;
 assign RESULT=result;
-always @(posedge clk)
+always @(instruction)
 begin
     imm=instruction[15:0];
     imm[31:16]={16{imm[15]}};
@@ -186,6 +186,6 @@ begin
            imm=0;
 
         end
-        $display("regA %b, regB %b, result %b, flags %b",regA,regB,result,flags);
+        //$display("regA %b, regB %b, result %b, flags %b",regA,regB,result,flags);
     end
 endmodule

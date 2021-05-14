@@ -3,77 +3,216 @@ module EX(input [180:0] IDEX,output [140:0]exmem,input CLK);
     reg [140:0]EXMEM;
     reg [4:0] rg0,rg1;
     reg [5:0] FUNC;
-
     reg regdist,alusrc,sign;
     reg zerobit=0;
     reg [1:0] ALUOP;
     reg [2:0] ALUCTR;
-    wire [2:0] flags;
     reg[31:0] rega,busb,imm,regb;
-    wire[31:0] alurst;
+    reg[34:0] temp;
     integer count=-2;
-//    function automatic[2:0] aluctr;
-//    input reg [5:0]func;
-//    input reg [1:0] aluop;
-//
-//    begin
-//        $display("op %b, func %b",aluop,func);
-//        if (aluop==2'b00) aluctr=3'b010;
-//        else if ((aluop==2'b11)||(aluop==2'b01)) aluctr=3'b110;
-//        else
-//            begin
-//                case(func[3:0])
-//                    4'b0000:
-//                    begin aluctr=3'b010; end
-//                    4'b0010:
-//                    begin aluctr=3'b110; end
-//                    4'b0100:
-//                    begin aluctr=3'b000; end
-//                    4'b0101:
-//                    begin aluctr=3'b001; end
-//                    4'b1010:
-//                    begin aluctr=3'b111; end
-//                endcase
-//            end
-//        $display("aluctr %b",aluctr);
-//    end
-//    endfunction
-//
-//    task alu(
-//    input reg sign,
-//    input reg[2:0] aluctr,
-//    input reg [31:0] regA,regB,
-//    output reg[31:0] result,
-//    output reg zero);
-//        begin
-//        zero=0;
-//            case(aluctr)
-//                3'b010:
-//                begin
-//                    result[31:0]=regA+regB;
-//                    if(sign&&(result[31]!=regA[31])&&(result[31]!=regB[31])) zero=1;
-//                end
-//                3'b110:
-//                begin
-//                    result[31:0]=regA-regB;
-//                    if(sign&&(result[31]!=regA[31])&&(result[31]!=regB[31])) zero=1;
-//                end
-//                3'b000:
-//                begin
-//                    result[31:0]=regA&regB;
-//                end
-//                3'b001:
-//                begin
-//                    result[31:0]=regA|regB;
-//                end
-//                3'b111:
-//                begin
-//                    zero=$signed(regA-regB)<0;
-//                end
-//            endcase
-//        end
-//    endtask
 
+    function automatic[34:0] ALU;
+        input [31:0] regA,regB,instruction;
+        reg [5:0] func,opcode,sa;
+        reg [31:0]rs,rt,imm;
+        reg [31:0] result;
+        reg [2:0] flags;
+        begin
+            $display("Executing inst: %h",instruction);
+            imm=instruction[15:0];
+            imm[31:16]={16{imm[15]}};
+            result=0;
+            flags=0;
+            rs=regA;
+            rt=regB;
+
+            opcode=instruction[31:26];
+            func=instruction[5:0];
+            sa=instruction[10:6];
+            if (opcode==6'b000000) begin
+                    case(func)
+                        6'b100000://add
+                            begin
+                                $display("add:");
+                                result=$signed(rs+rt);
+
+                                if((result[31]!=rs[31])&&(result[31]!=rt[31]))
+                                begin
+                                    flags[2]=1;
+                                end
+                            end
+                        6'b100001://addu
+                            begin
+                                $display("addu:");
+                                result=$unsigned(rs+rt);
+                            end
+                        6'b100010://sub
+                            begin
+                                $display("sub:");
+                                result=$signed(rs-rt);
+                                if((result[31]!=rs[31])&&(result[31]!=rt[31]))
+                                begin
+                                    flags[2]=1;
+                                end
+                            end
+                        6'b100011://subu
+                            begin
+                                $display("subu:");
+                                result=$unsigned(rs-rt);
+                            end
+                        6'b100100://and
+                            begin
+                                $display("and:");
+                                result=rs&rt;
+                            end
+                        6'b100101://or
+                            begin
+                                $display("or:");
+                                result=rs|rt;
+                            end
+                        6'b100110://xor
+                            begin
+                                $display("xor:");
+                                result=rs^rt;
+                            end
+                        6'b100111://nor
+                            begin
+                                $display("nor:");
+                                result=~(rs|rt);
+                            end
+                        6'b101010://slt
+                            begin
+                                $display("slt:");
+
+                                flags[1]=$signed(rs)-$signed (rt)<0;
+                                result[0]=flags[1];
+
+
+                            end
+                        6'b101011://sltu
+                            begin
+                                $display("sltu:");
+
+                                flags[1]=($unsigned (rs)-$unsigned (rt))>>31;
+                            end
+                        6'b000000://sll
+                            begin
+                                result=(rt<<sa);
+                            end
+                        6'b000010://srl
+                            begin
+                                result=(rt>>sa);
+                            end
+                        6'b000011://sra
+                            begin
+                                $display("sra:");
+                                result=(rt>>sa);
+                                while(count<sa)
+                                begin
+                                $display("rt %b,sa %b",rt,sa);
+                                    result[31-count]=rt[31];
+                                    count=count+1;
+                                end
+                            end
+                        6'b000100://sllv
+                            begin
+                                $display("sllv:");
+                                $display("here rt%b, rs%b",rt,rs);
+                                result=(rt<<rs);
+                            end
+                        6'b000110://srlv
+                            begin
+                                $display("srlv:");
+                                result=(rt>>rs);
+                            end
+                        6'b000111://srav
+                            begin
+                                $display("srav:");
+                                if(rt[31]==1) begin
+                                    count=$unsigned(-1)<<(32-rs);
+                                end
+                                result=(rt>>rs)|count;
+                                count=0;
+
+                            end
+                    endcase
+            end
+            else begin
+                    case(opcode)
+                        6'b001000://addi
+                            begin
+
+                                $display("addi:");
+                                result=$signed(rs+imm);
+
+                                if((result[31]!=rs[31])&&(result[31]!=imm[31]))
+                                begin
+                                    flags[2]=1;
+                                end
+                            end
+                        6'b001001://addiu
+                            begin
+                                $display("addiu:");
+                                imm=imm[15:0];
+
+                                result=$unsigned(rs+imm);
+
+                            end
+                        6'b001010://slti
+                            begin
+                                $display("slti:");
+                                flags[1]=($signed (rs)-$signed (imm)<0);
+                            end
+                        6'b001011://sltiu
+                            begin
+                                imm=imm[15:0];
+                                $display("sltiu:");
+                                flags[1]=$signed ($unsigned (rs)-$unsigned (imm))<0;
+                            end
+                        6'b000101://bne
+                            begin
+                                $display("bne:");
+                                flags[0]=(rs!=rt);
+
+                            end
+                        6'b000100://beq
+                            begin
+                                $display("beq:");
+                                flags[0]=(rs==rt);
+
+                            end
+                        6'b100011://lw
+                            begin
+                                $display("lw:");
+                                result=rs+(imm<<2);
+                            end
+                        6'b101011://sw
+                            begin
+                                $display("sw:");
+                                result=rs+(imm<<2);
+                            end
+                        6'b001100://andi
+                            begin
+                                result=rs&imm;
+                            end
+                        6'b001101://ori
+                            begin
+                                result=rs|imm;
+                            end
+                        6'b001110://xori
+                            begin
+                                result=rs^imm;
+                            end
+                   endcase
+                   imm=0;
+            end
+            ALU[31:0]=result;
+            ALU[34:32]=flags;
+
+        end
+
+    endfunction
+//
     function automatic[31:0] mux1;
         input [31:0]in1,in2;
         input signal;
@@ -98,40 +237,34 @@ module EX(input [180:0] IDEX,output [140:0]exmem,input CLK);
         end
     endfunction
 
-    alu ALU(.clk(CLK),.regA(rega),.regB(regb),.RESULT(alurst),.FLAGS(flags),.instruction(IDEX[180:149]));
-    always@(posedge CLK) begin
-                $display("Current EX: line %d",count);
-                count=count+1;
+    always@(IDEX  or posedge CLK) begin
 
-    //$display("IDFIN %b",IDEX[148]);
+         count=count+1;
+
         rg0[4:0]=IDEX[73:69];
         rg1[4:0]=IDEX[68:64];
         regdist=IDEX[147];
         busb=IDEX[105:74];
-        //$display("IDEX%b",IDEX);
         rega=IDEX[137:106];
         imm=IDEX[63:32];
         alusrc=IDEX[146];
-        regb=mux1(imm,busb,alusrc);
+        regb=mux1(busb,imm,alusrc);
         ALUOP=IDEX[145:144];
-        //FUNC=IDEX[15:10];
-        //sign=FUNC[0];
-        //$display("judge%d",FUNC[3:0]==4'b0101);
-        //if (FUNC[3:0]!=4'b0101) FUNC[0]=1'b0;
-        //ALUCTR[2:0]=aluctr(FUNC,ALUOP);
-        //alu(sign,ALUCTR,rega,regb,alurst,zerobit);
-        //$display("alurst %b busb %b",alurst,busb);
         EXMEM[31:0]=IDEX[31:0]+(IDEX[63:32]<<2);
         EXMEM[36:32]=mux2(rg0,rg1,regdist);
         EXMEM[68:37]=IDEX[105:74];
-        EXMEM[100:69]=alurst;
-        EXMEM[101]=flags[2];
+        temp=ALU(rega,regb,IDEX[180:149]);
+        EXMEM[100:69]=temp[31:0];
+
+        EXMEM[101]=temp[33];
         EXMEM[107:102]=IDEX[143:138];
         EXMEM[108]=IDEX[148];
         EXMEM[140:109]=IDEX[180:149];
-        //$display("%b,%b,%b,%b,%b,%b",EXMEM[107:102],EXMEM[101:70],EXMEM[69],EXMEM[68:37],EXMEM[36:5],EXMEM[4:0]);
-        //$display("1xm1m[105]%b,1d1x[141]%b",EXMEM[105],IDEX[141]);
+        temp=EXMEM[100:69];
+
+
     end
 
     assign exmem=EXMEM;
+
 endmodule

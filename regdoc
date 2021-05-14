@@ -31,3 +31,9 @@ MEM/WB:
 [71:69]ctr[4,1,0]
 [72] finish
 [104:73] INST
+
+andi  001100
+ori   001101
+xori  001110
+addi  001000
+addiu 001001

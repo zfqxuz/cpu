@@ -34,12 +34,11 @@ module InstructionRAM
   reg [31:0] RAM [0:512-1];
 
   initial begin
-    $readmemb("test.txt",RAM);
+    $readmemb("test2.txt",RAM);
   end
 
-  always @(posedge CLOCK) begin : InstructionRAM_blockRamFile
+  always @(posedge CLOCK ) begin : InstructionRAM_blockRamFile
 
-    //$display("INSTFETCHADDR %d, RST %b",wild,DATA);
     if (1'b0 & ENABLE) begin
       RAM[(wild_0)] <= DATA_0[31:0];
     end
